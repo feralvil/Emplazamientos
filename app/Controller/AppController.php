@@ -31,5 +31,41 @@ App::uses('Controller', 'Controller');
  * @link		http://book.cakephp.org/2.0/en/controllers.html#the-app-controller
  */
 class AppController extends Controller {
-    public $components = array('DebugKit.Toolbar');
+    public $components = array(
+        'DebugKit.Toolbar', 'Flash',
+        'Auth' => array(
+            'loginRedirect' => array(
+                'controller' => 'emplazamientos',
+                'action' => 'index'
+            ),
+            'logoutRedirect' => array(
+                'controller' => 'users',
+                'action' => 'login',
+            ),
+            'unauthorizedRedirect' => array(
+                'controller' => 'emplazamientos',
+                'action' => 'index'
+            ),
+            'authenticate' => array(
+                'Form' => array('passwordHasher' => 'Blowfish')
+            ),
+            'flash' => array('element' => 'auth', 'key' => 'auth'),
+            'authorize' => array('Controller'),
+            'authError' => 'No dispone de permisos para acceder a esta ubicación o su sesión ha expirado',
+        )
+    );
+
+    public function isAuthorized($user) {
+        // Los admin pueden acceder a todo:
+        if (isset($user['role']) && $user['role'] === 'admin') {
+            return true;
+        }
+
+        if ($this->action === 'logout') {
+            return true;
+        }
+
+        // Default deny
+        return false;
+    }
 }

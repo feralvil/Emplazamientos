@@ -40,14 +40,12 @@ $cakeVersion = __d('cake_dev', 'CakePHP %s', Configure::version())
 <body>
 	<div id="contenidos" class="container-fluid">
 		<div id="header" class="row">
-			<?php echo $this->element('menu'); ?>
+			<?php echo $this->element('cabecera'); ?>
 		</div>
 		<div id="content" class="row">
-			<div class="col-md-12">
-				<?php echo $this->Flash->render(); ?>
-				<?php echo $this->Flash->render('auth'); ?>
-				<?php echo $this->fetch('content'); ?>
-			</div>
+			<?php echo $this->Flash->render(); ?>
+			<?php echo $this->Flash->render('auth'); ?>
+			<?php echo $this->fetch('content'); ?>
 		</div>
 		<div id="footer" class="row">
 			<p class="text-center">
@@ -56,8 +54,7 @@ $cakeVersion = __d('cake_dev', 'CakePHP %s', Configure::version())
 		</div>
 	</div>
 	<?php
-	//echo $this->element('sql_dump');
-	echo $this->Js->writeBuffer();
+	echo $this->Js->writeBuffer(); // Write cached scripts (para JQuery)
 	?>
 </body>
 </html>
