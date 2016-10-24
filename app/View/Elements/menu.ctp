@@ -36,12 +36,21 @@ if ($rol != 'admin'){
                             echo $this->Html->Link(__('Usuarios'),array('controller' => 'users', 'action' => 'index'), array('title' => __('Usuarios')));
                             echo '</li>';
                         }
-                        echo '<li';
+                        echo '<li class="dropdown"';
                         if ($controlador == "emplazamientos"){
                             echo ' class="active"';
                         }
                         echo '>';
-                        echo $this->Html->Link(__('Emplazamientos'),array('controller' => 'emplazamientos', 'action' => 'index'), array('title' => __('Emplazamientos')));
+                        echo $this->Html->Link(
+                            __('Emplazamientos') . ' <span class="caret"></span>',
+                            array('controller' => 'emplazamientos', 'action' => 'index'),
+                            array('title' => __('Emplazamientos'), 'class' => "dropdown-toggle", 'data-toggle' => "dropdown", 'role' => "button", 'aria-haspopup' => "true",  'aria-expanded' => "false", 'escape' => false)
+                        );
+                        echo '<ul class="dropdown-menu">';
+                        echo '<li>';
+                        echo $this->Html->Link(__('Mapa'),array('controller' => 'emplazamientos', 'action' => 'mapa'), array('title' => __('Mapa')));
+                        echo '</li>';
+                        echo '</ul>';
                         echo '</li>';
                         echo '<li';
                         if ($controlador == "servicios"){

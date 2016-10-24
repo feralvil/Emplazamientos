@@ -12,7 +12,7 @@ echo $this->Form->create('User', array(
         echo $this->Form->label('User.password', __('Contraseña'), array('class' => 'col-sm-2 control-label'));
         echo $this->Form->input('User.password', array('div' => 'col-sm-2 has-error', 'class' => 'form-control'));
         echo $this->Form->label('User.passconf', __('Repetir Contraseña'), array('class' => 'col-sm-2 control-label'));
-        echo $this->Form->input('User.passconf', array('div' => 'col-sm-2 has-error', 'class' => 'form-control'));
+        echo $this->Form->input('User.passconf', array('type' => 'password', 'div' => 'col-sm-2 has-error', 'class' => 'form-control'));
         ?>
     </div>
     <div class="form-group text-center">

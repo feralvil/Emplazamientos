@@ -17,7 +17,6 @@ $nusers = count($users);
 ?>
 <h1><?php echo __('Usuarios de la aplicación'); ?></h1>
 <?php
-$nusers = count($users);
 echo $this->Form->create('User', array(
     'inputDefaults' => array('label' => false,'div' => false),
     'class' => 'form-horizontal'

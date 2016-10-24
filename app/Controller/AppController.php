@@ -34,6 +34,9 @@ class AppController extends Controller {
     public $components = array(
         'DebugKit.Toolbar', 'Flash',
         'Auth' => array(
+            'authenticate' => array(
+                'Form' => array('passwordHasher' => 'Blowfish')
+            ),
             'loginRedirect' => array(
                 'controller' => 'emplazamientos',
                 'action' => 'index'
@@ -45,9 +48,6 @@ class AppController extends Controller {
             'unauthorizedRedirect' => array(
                 'controller' => 'emplazamientos',
                 'action' => 'index'
-            ),
-            'authenticate' => array(
-                'Form' => array('passwordHasher' => 'Blowfish')
             ),
             'flash' => array('element' => 'auth', 'key' => 'auth'),
             'authorize' => array('Controller'),
