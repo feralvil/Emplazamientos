@@ -92,21 +92,20 @@ foreach ($emplazamientos as $emplazamiento) {
     $objPHPExcel->getActiveSheet()->setCellValue('F' . $fila, $emplazamiento['Emplazamiento']['titular']);
     $objPHPExcel->getActiveSheet()->setCellValue('G' . $fila, $emplazamiento['Emplazamiento']['latitud']);
     $objPHPExcel->getActiveSheet()->setCellValue('H' . $fila, $emplazamiento['Emplazamiento']['longitud']);
-    $servicio = '-';
-    if ($emplazamiento['Emplazamiento']['comdes'] == 'SI'){
-        $servicio = 'X';
+    // Buscamos los servicios
+    $servtipos = array();
+    foreach ($emplazamiento['Servicio'] as $servemp) {
+        $servtipos[] = $servemp['servtipo_id'];
     }
-    $objPHPExcel->getActiveSheet()->setCellValue('I' . $fila, $servicio);
-    $servicio = '-';
-    if ($emplazamiento['Emplazamiento']['tdt-gva'] == 'SI'){
-        $servicio = 'X';
+    $servicios = array(1 => 'comdes', 2 => 'tdt-gva', 4 => 'rtvv');
+    $columnas = array(1 => 'I', 2 => 'J', 4 => 'K');
+    foreach ($servicios as $indserv => $nomserv) {
+        $servicio = 'No';
+        if (in_array($indserv, $servtipos)){
+            $servicio = 'Sí';
+        }
+        $objPHPExcel->getActiveSheet()->setCellValue($columnas[$indserv] . $fila, $servicio);
     }
-    $objPHPExcel->getActiveSheet()->setCellValue('J' . $fila, $servicio);
-    $servicio = '-';
-    if ($emplazamiento['Emplazamiento']['rtvv'] == 'SI'){
-        $servicio = 'X';
-    }
-    $objPHPExcel->getActiveSheet()->setCellValue('K' . $fila, $servicio);
     if ($relleno){
         $objPHPExcel->getActiveSheet()->getStyle('A'.$fila.':'.'K'.$fila)->applyFromArray($estiloRelleno);
     }

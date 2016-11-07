@@ -7,7 +7,9 @@ App::uses('AppModel', 'Model');
 App::uses('BlowfishPasswordHasher', 'Controller/Component/Auth');
 
 class Emplazamiento extends AppModel {
-    public $belongsTo = array('Municipio', 'Comarca');
+    public $belongsTo = array('Municipio', 'Comarca', 'Entidad');
+    public $hasMany = array('Servicio');
+    //public $actsAs = array('Containable');
     public $validate = array(
         'centro' => array(
             'required' => array(

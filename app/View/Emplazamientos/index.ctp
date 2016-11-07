@@ -41,19 +41,28 @@ echo $this->Form->hidden('irapag', array('value' => '0'));
         echo $this->Form->input('Emplazamiento.provincia', array('options' => $provincias, 'empty' => __('Seleccionar'), 'div' => 'col-sm-3', 'class' => 'form-control'));
         echo $this->Form->label('Emplazamiento.comarca', __('Comarca'), array('class' => 'col-sm-1 control-label'));
         echo $this->Form->input('Emplazamiento.comarca', array('options' => $comarcas, 'empty' => __('Seleccionar'), 'div' => 'col-sm-3', 'class' => 'form-control'));
-        echo $this->Form->label('Emplazamiento.titular', __('Titular'), array('class' => 'col-sm-1 control-label'));
-        echo $this->Form->input('Emplazamiento.titular', array('options' => $titulares, 'empty' => __('Seleccionar'), 'div' => 'col-sm-3', 'class' => 'form-control'));
+        echo $this->Form->label('Emplazamiento.centro', __('Centro'), array('class' => 'col-sm-1 control-label'));
         ?>
+        <div class="input-group col-sm-2">
+            <?php
+            echo $this->Form->input('Emplazamiento.centro', array('class' => 'form-control'));
+            ?>
+            <div class="input-group-btn">
+                <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+            </div>
+        </div>
     </div>
     <div class="form-group">
         <?php
         $opciones = array ('SI' => 'Sí', 'NO' => 'No');
-        echo $this->Form->label('Emplazamiento.comdes', __('COMDES'), array('class' => 'col-sm-2 control-label'));
+        echo $this->Form->label('Emplazamiento.comdes', __('COMDES'), array('class' => 'col-sm-1 control-label'));
         echo $this->Form->input('Emplazamiento.comdes', array('options' => $opciones, 'empty' => __('Seleccionar'), 'div' => 'col-sm-2', 'class' => 'form-control'));
-        echo $this->Form->label('Emplazamiento.tdt-gva', __('TDT GVA'), array('class' => 'col-sm-2 control-label'));
+        echo $this->Form->label('Emplazamiento.tdt-gva', __('TDT GVA'), array('class' => 'col-sm-1 control-label'));
         echo $this->Form->input('Emplazamiento.tdt-gva', array('options' => $opciones, 'empty' => __('Seleccionar'), 'div' => 'col-sm-2', 'class' => 'form-control'));
-        echo $this->Form->label('Emplazamiento.rtvv', __('TDT RTVV'), array('class' => 'col-sm-2 control-label'));
+        echo $this->Form->label('Emplazamiento.rtvv', __('TDT RTVV'), array('class' => 'col-sm-1 control-label'));
         echo $this->Form->input('Emplazamiento.rtvv', array('options' => $opciones, 'empty' => __('Seleccionar'), 'div' => 'col-sm-2', 'class' => 'form-control'));
+        echo $this->Form->label('Emplazamiento.titular', __('Titular'), array('class' => 'col-sm-1 control-label'));
+        echo $this->Form->input('Emplazamiento.titular', array('options' => $titulares, 'empty' => __('Seleccionar'), 'div' => 'col-sm-2', 'class' => 'form-control'));
         ?>
     </div>
 </fieldset>
@@ -171,36 +180,62 @@ if ($nemp > 0){
                 </td>
                 <td><?php echo $emplazamiento['Emplazamiento']['centro'];?></td>
                 <td><?php echo $emplazamiento['Municipio']['provincia'];?></td>
-                <td><?php echo $emplazamiento['Emplazamiento']['titular'];?></td>
+                <td>
+                    <?php
+                    $entidad = $emplazamiento['Entidad']['nombre'];
+                    $vectent = explode(' ', $entidad);
+                    $entidad = $vectent[0];
+                    switch ($entidad) {
+                        case 'Generalitat':
+                            $entidad = 'GVA';
+                            break;
+
+                        case 'Ayuntamiento':
+                            $entidad = 'GVA-AYTO';
+                            break;
+
+                        case 'Ferrocarrils':
+                            $entidad = 'FGV';
+                            break;
+
+                        case 'RadioTelevisió':
+                            $entidad = 'RTVV';
+                            break;
+
+                        case 'Diputación':
+                            $entidad = 'DIP. ' . mb_strtoupper($vectent[2]);
+                            break;
+
+                        default:
+                            $entidad = mb_strtoupper($entidad);
+                            break;
+                    }
+                    echo $entidad;
+                    ?>
+                </td>
                 <td><?php echo $emplazamiento['Emplazamiento']['latitud'];?></td>
                 <td><?php echo $emplazamiento['Emplazamiento']['longitud'];?></td>
-                <td class="text-center">
-                    <?php
-                    $servicio = '&mdash;';
-                    if ($emplazamiento['Emplazamiento']['comdes'] == 'SI'){
-                        $servicio = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>';
-                    }
-                    ?>
-                    <?php echo $servicio;?>
-                </td>
-                <td class="text-center">
-                    <?php
-                    $servicio = '&mdash;';
-                    if ($emplazamiento['Emplazamiento']['tdt-gva'] == 'SI'){
-                        $servicio = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>';
-                    }
-                    ?>
-                    <?php echo $servicio;?>
-                </td>
-                <td class="text-center">
-                    <?php
-                    $servicio = '&mdash;';
-                    if ($emplazamiento['Emplazamiento']['rtvv'] == 'SI'){
-                        $servicio = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>';
-                    }
-                    ?>
-                    <?php echo $servicio;?>
-                </td>
+                <?php
+                // Buscamos los servicios
+                $servtipos = array();
+                foreach ($emplazamiento['Servicio'] as $servemp) {
+                    $servtipos[] = $servemp['servtipo_id'];
+                }
+                $servicios = array(1 => 'comdes', 2 => 'tdt-gva', 4 => 'rtvv');
+                foreach ($servicios as $indserv => $nomserv) {
+                ?>
+                    <td class="text-center">
+                        <?php
+                        $servicio = 'glyphicon glyphicon-remove';
+                        if (in_array($indserv, $servtipos)){
+                            $servicio = 'glyphicon glyphicon-ok';
+                        }
+                        ?>
+                        <span class="'. <?php echo $servicio;?> . '" aria-hidden="true"></span>
+                    </td>
+                <?php
+                }
+                ?>
             </tr>
         <?php
         }

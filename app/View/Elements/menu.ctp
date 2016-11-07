@@ -36,11 +36,12 @@ if ($rol != 'admin'){
                             echo $this->Html->Link(__('Usuarios'),array('controller' => 'users', 'action' => 'index'), array('title' => __('Usuarios')));
                             echo '</li>';
                         }
-                        echo '<li class="dropdown"';
+                        echo '<li class="dropdown';
+                        $clase = '';
                         if ($controlador == "emplazamientos"){
-                            echo ' class="active"';
+                            $clase = ' active';
                         }
-                        echo '>';
+                        echo $clase . '">';
                         echo $this->Html->Link(
                             __('Emplazamientos') . ' <span class="caret"></span>',
                             array('controller' => 'emplazamientos', 'action' => 'index'),
@@ -48,17 +49,34 @@ if ($rol != 'admin'){
                         );
                         echo '<ul class="dropdown-menu">';
                         echo '<li>';
+                        echo $this->Html->Link(__('Listado'),array('controller' => 'emplazamientos', 'action' => 'index'), array('title' => __('Listado')));
+                        echo '</li>';
+                        echo '<li>';
                         echo $this->Html->Link(__('Mapa'),array('controller' => 'emplazamientos', 'action' => 'mapa'), array('title' => __('Mapa')));
                         echo '</li>';
                         echo '</ul>';
                         echo '</li>';
-                        echo '<li';
+                        echo '<li class="dropdown';
+                        $clase = '';
                         if ($controlador == "servicios"){
-                            echo ' class="active"';
+                            $clase = ' active';
                         }
-                        echo '>';
-                        echo $this->Html->Link(__('Servicios'),array('controller' => 'servicios', 'action' => 'index'), array('title' => __('Servicios')));
+                        echo $clase . '">';
+                        echo $this->Html->Link(
+                            __('Servicios') . ' <span class="caret"></span>',
+                            array('controller' => 'servicios', 'action' => 'index'),
+                            array('title' => __('Servicios'), 'class' => "dropdown-toggle", 'data-toggle' => "dropdown", 'role' => "button", 'aria-haspopup' => "true",  'aria-expanded' => "false", 'escape' => false)
+                        );
+                        echo '<ul class="dropdown-menu">';
+                        echo '<li>';
+                        echo $this->Html->Link(__('Listado'),array('controller' => 'servicios', 'action' => 'index'), array('title' => __('Listado')));
                         echo '</li>';
+                        echo '<li>';
+                        echo $this->Html->Link(__('Importar'),array('controller' => 'servicios', 'action' => 'importar'), array('title' => __('Importar')));
+                        echo '</li>';
+                        echo '</ul>';
+                        echo '</li>';
+                        echo '</ul>';
                         ?>
                     </ul>
                     <p class="navbar-text navbar-right">

@@ -19,7 +19,7 @@ class EmplazamientosController extends AppController {
             $accPerm = array();
             if ($rol == 'colab') {
                 $accPerm = array(
-                    'index', 'detalle', 'editar', 'agregar', 'xlsexportar', 'mapa'
+                    'index', 'detalle', 'editar', 'agregar', 'xlsexportar', 'mapa', 'entidades'
                 );
             }
             elseif ($rol == 'consum') {
@@ -60,11 +60,48 @@ class EmplazamientosController extends AppController {
 
         // Select de Titulares:
         $opciones = array(
-            'fields' => array('Emplazamiento.titular', 'Emplazamiento.titular'),
-            'order' => 'Emplazamiento.titular',
-            'group' => 'Emplazamiento.titular'
+            'fields' => array('Emplazamiento.entidad_id'),
+            'order' => 'Emplazamiento.entidad_id',
+            'group' => 'Emplazamiento.entidad_id'
         );
-        $this->set('titulares', $this->Emplazamiento->find('list', $opciones));
+        $titulares = $this->Emplazamiento->find('list', $opciones);
+        $titsel = array();
+        foreach ($titulares as $titular){
+            $this->Emplazamiento->Entidad->recursive = -1;
+            $entidad = $this->Emplazamiento->Entidad->read(null, $titular);
+            $nomentidad = $entidad['Entidad']['nombre'];
+            $vectent = explode(' ', $nomentidad);
+            $entidad = $vectent[0];
+            $indice = $titular;
+            switch ($entidad) {
+                case 'Generalitat':
+                    $entidad = 'GVA';
+                    break;
+
+                case 'Ayuntamiento':
+                    $entidad = 'GVA-AYTO';
+                    $indice = 100;
+                    break;
+
+                case 'Ferrocarrils':
+                    $entidad = 'FGV';
+                    break;
+
+                case 'RadioTelevisió':
+                    $entidad = 'RTVV';
+                    break;
+
+                case 'Diputación':
+                    $entidad = 'DIP. ' . mb_strtoupper($vectent[2]);
+                    break;
+
+                default:
+                    $entidad = mb_strtoupper($entidad);
+                    break;
+            }
+            $titsel[$indice] = $entidad;
+        }
+        $this->set('titulares', $titsel);
 
         // Comprobamos si hemos recibido datos del formulario:
         $condiciones = array();
@@ -77,6 +114,11 @@ class EmplazamientosController extends AppController {
                 $addcond = array('Emplazamiento.municipio_id LIKE'  => $this->request->data['Emplazamiento']['provincia'] . '%');
                 $condiciones = array_merge($addcond, $condiciones);
             }
+            // Input de Centro
+            if (!empty($this->request->data['Emplazamiento']['centro'])){
+                $addcond = array('Emplazamiento.centro LIKE'  => '%' . $this->request->data['Emplazamiento']['centro'] . '%');
+                $condiciones = array_merge($addcond, $condiciones);
+            }
             // Select de Comarca
             if (!empty($this->request->data['Emplazamiento']['comarca'])){
                 $addcond = array('Emplazamiento.comarca_id'  => $this->request->data['Emplazamiento']['comarca']);
@@ -84,7 +126,12 @@ class EmplazamientosController extends AppController {
             }
             // Select de Titular
             if (!empty($this->request->data['Emplazamiento']['titular'])){
-                $addcond = array('Emplazamiento.titular'  => $this->request->data['Emplazamiento']['titular']);
+                if ($this->request->data['Emplazamiento']['titular'] == 100){                    
+                    $addcond = array('Emplazamiento.entidad_id BETWEEN ? AND ?'  => array(6,547));
+                }
+                else{
+                    $addcond = array('Emplazamiento.entidad_id'  => $this->request->data['Emplazamiento']['titular']);
+                }
                 $condiciones = array_merge($addcond, $condiciones);
             }
             // Select de COMDES
@@ -149,6 +196,72 @@ class EmplazamientosController extends AppController {
 
         // Definimos la vista
         $this->render('xlsexportar', 'xls');
+    }
+
+    public function entidades(){
+        // Fijamos el título de la vista
+        $this->set('title_for_layout', __('Importar Titulares de Emplazamientos'));
+        // Limitamos el alcance de las búsquedas:
+        $this->Emplazamiento->recursive = -1;
+        // Buscamos el fichero
+        App::uses('Folder', 'Utility');
+        App::uses('File', 'Utility');
+        // Comrpobamos si existe
+        $ruta = 'files' . DS . 'EmplazamientosTitulares.ods';
+        $fichero = new File($ruta, false);
+        if ($fichero->exists()){
+            // Cargamos la clase para leer el fichero Excel:
+            App::import('Vendor', 'Classes/PHPExcel');
+            // Intentamos cargar el fichero
+            try{
+                $tipoFich = PHPExcel_IOFactory::identify($ruta);
+                $objReader = PHPExcel_IOFactory::createReader($tipoFich);
+                // Sólo nos interesa cargar los datos:
+                $objReader->setReadDataOnly(true);
+                $objPHPExcel = $objReader->load($ruta);
+            }
+            catch(Exception $e){
+                die("Error al cargar el fichero de datos: ".$e->getMessage());
+            }
+            // Nos vamos a la hoja de Catastro
+            // Fijamos como hoja activa la primera (sólo se importa una)
+            $objPHPExcel->setActiveSheetIndex(0);
+            // Obtenemos el número de filas de la hoja:
+            $maxfila = $objPHPExcel->getActiveSheet()->getHighestRow() + 1;
+            $fila = 2;
+            $emplazamientos = array();
+            while (($fila < $maxfila) && ($objPHPExcel->getActiveSheet()->getCell("A" . $fila)->getValue()!= "")){
+                $idemp = $objPHPExcel->getActiveSheet()->getCell("A" . $fila)->getValue();
+                $emplazamiento = $this->Emplazamiento->read(null, $idemp);
+                $emplazamiento['Emplazamiento']['entidad_id'] = $objPHPExcel->getActiveSheet()->getCell("G" . $fila)->getValue();
+                $emplazamientos[] = $emplazamiento;
+                $fila++;
+            }
+            if ($this->request->is('post') || $this->request->is('put')) {
+                $datos = array();
+                foreach ($emplazamientos as $emplazamiento) {
+                    $datosemp = array(
+                        'Emplazamiento' => array(
+                            'id' => $emplazamiento['Emplazamiento']['id'],
+                            'entidad_id' => $emplazamiento['Emplazamiento']['entidad_id'],
+                        ),
+                    );
+                    $datos[] = $datosemp;
+                }
+                $nemp = count($datos);
+                if ($this->Emplazamiento->saveMany($datos)){
+                    $this->Flash->exito(__('Actualizados correctamente') . ' ' . $nemp . ' ' . __('Emplazamientos') . '.');
+                    $this->redirect(array('controller' => 'emplazamientos', 'action' => 'index'));
+                }
+                else{
+                    $this->Flash->error(__('Error al guardar las entidades'));
+                    $this->redirect(array('controller' => 'emplazamientos', 'action' => 'entidades'));
+                }
+            }
+            else{
+                $this->set('emplazamientos', $emplazamientos);
+            }
+        }
     }
 }
 ?>

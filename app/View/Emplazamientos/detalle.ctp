@@ -70,33 +70,26 @@ $this->Js->event('click', $functab);
                     <th><?php echo __('TDT RTVV');?></th>
                 </tr>
                 <tr>
-                    <td class="text-center">
-                        <?php
-                        $servicio = '&mdash;';
-                        if ($emplazamiento['Emplazamiento']['comdes'] == 'SI'){
-                            $servicio = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>';
-                        }
-                        ?>
-                        <?php echo $servicio;?>
-                    </td>
-                    <td class="text-center">
-                        <?php
-                        $servicio = '&mdash;';
-                        if ($emplazamiento['Emplazamiento']['tdt-gva'] == 'SI'){
-                            $servicio = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>';
-                        }
-                        ?>
-                        <?php echo $servicio;?>
-                    </td>
-                    <td class="text-center">
-                        <?php
-                        $servicio = '&mdash;';
-                        if ($emplazamiento['Emplazamiento']['rtvv'] == 'SI'){
-                            $servicio = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>';
-                        }
-                        ?>
-                        <?php echo $servicio;?>
-                    </td>
+                    <?php
+                    $servicios = array(1 => 'comdes', 2 => 'tdt-gva', 4 => 'rtvv');
+                    $servtipos = array();
+                    foreach ($emplazamiento['Servicio'] as $servemp) {
+                        $servtipos[] = $servemp['servtipo_id'];
+                    }
+                    foreach ($servicios as $indserv => $nomserv) {
+                    ?>
+                        <td class="text-center">
+                            <?php
+                            $servicio = 'glyphicon glyphicon-remove';
+                            if (in_array($indserv, $servtipos)){
+                                $servicio = 'glyphicon glyphicon-ok';
+                            }
+                            ?>
+                            <span class="'. <?php echo $servicio;?> . '" aria-hidden="true"></span>
+                        </td>
+                    <?php
+                    }
+                    ?>
                 </tr>
             </table>
         </div>
@@ -104,7 +97,7 @@ $this->Js->event('click', $functab);
     <div id="titular" class="pestanya row hidden">
         <div class="col-md-12">
             <h2><?php echo __('Titular del emplazamiento');?></h2>
-            <p><?php echo $emplazamiento['Emplazamiento']['titular'];?></p>
+            <p><?php echo $emplazamiento['Entidad']['nombre'];?></p>
         </div>
     </div>
 </div>
