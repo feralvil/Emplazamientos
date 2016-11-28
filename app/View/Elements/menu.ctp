@@ -76,6 +76,25 @@ if ($rol != 'admin'){
                         echo '</li>';
                         echo '</ul>';
                         echo '</li>';
+                        echo '<li class="dropdown';
+                        $clase = '';
+                        if (($controlador == "multiples") || ($controlador == "programas")){
+                            $clase = ' active';
+                        }
+                        echo $clase . '">';
+                        echo $this->Html->Link(
+                            __('TDT') . ' <span class="caret"></span>', "#",
+                            array('title' => __('TDT'), 'class' => "dropdown-toggle", 'data-toggle' => "dropdown", 'role' => "button", 'aria-haspopup' => "true",  'aria-expanded' => "false", 'escape' => false)
+                        );
+                        echo '<ul class="dropdown-menu">';
+                        echo '<li>';
+                        echo $this->Html->Link(__('Múltiples'),array('controller' => 'multiples', 'action' => 'index'), array('title' => __('Múltiples')));
+                        echo '</li>';
+                        echo '<li>';
+                        echo $this->Html->Link(__('Programas'),array('controller' => 'programas', 'action' => 'index'), array('title' => __('Programas')));
+                        echo '</li>';
+                        echo '</ul>';
+                        echo '</li>';
                         echo '</ul>';
                         ?>
                     </ul>

@@ -156,11 +156,11 @@ if ($nusers > 0){
                     ?> &mdash;
                     <?php
                     echo $this->Form->postLink(
-                            '<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>',
-                            array('controller' => 'users', 'action' => 'borrar', $usuario['User']['id']),
-                            array('title' => __('Borrar Usuario'), 'escape' => false),
-                            __('¿Seguro que desea eliminar el Usuario')." '". $usuario['User']['username'] . "'?"
-                            );
+                        '<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>',
+                        array('controller' => 'users', 'action' => 'borrar', $usuario['User']['id']),
+                        array('title' => __('Borrar Usuario'), 'escape' => false),
+                        __('¿Seguro que desea eliminar el Usuario')." '". $usuario['User']['username'] . "'?"
+                    );
                     ?>
                 </td>
                 <td><?php echo $usuario['User']['nombre'] . ' ' . $usuario['User']['apellido1'] . ' ' . $usuario['User']['apellido2'];?></td>
