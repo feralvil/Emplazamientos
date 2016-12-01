@@ -19,7 +19,8 @@ class EmplazamientosController extends AppController {
             $accPerm = array();
             if ($rol == 'colab') {
                 $accPerm = array(
-                    'index', 'detalle', 'editar', 'agregar', 'xlsexportar', 'mapa', 'entidades'
+                    'index', 'detalle', 'editar', 'agregar', 'xlsexportar', 'mapa', 'entidades',
+                    'agregarserv', 'borrarserv'
                 );
             }
             elseif ($rol == 'consum') {
@@ -126,7 +127,7 @@ class EmplazamientosController extends AppController {
             }
             // Select de Titular
             if (!empty($this->request->data['Emplazamiento']['titular'])){
-                if ($this->request->data['Emplazamiento']['titular'] == 100){                    
+                if ($this->request->data['Emplazamiento']['titular'] == 100){
                     $addcond = array('Emplazamiento.entidad_id BETWEEN ? AND ?'  => array(6,547));
                 }
                 else{
@@ -261,6 +262,311 @@ class EmplazamientosController extends AppController {
             else{
                 $this->set('emplazamientos', $emplazamientos);
             }
+        }
+    }
+
+    public function agregar(){
+        // Select de Municipios:
+        $this->Emplazamiento->Municipio->recursive = -1;
+        $opciones = array(
+            'fields' => array('Municipio.id', 'Municipio.nombre'),
+            'order' => 'Municipio.nombre'
+        );
+        $this->set('municipios', $this->Emplazamiento->Municipio->find('list', $opciones));
+
+        // Select de Titulares:
+        $opciones = array(
+            'fields' => array('Emplazamiento.entidad_id'),
+            'order' => 'Emplazamiento.entidad_id',
+            'group' => 'Emplazamiento.entidad_id'
+        );
+        $titulares = $this->Emplazamiento->find('list', $opciones);
+        $titsel = array();
+        foreach ($titulares as $titular){
+            $this->Emplazamiento->Entidad->recursive = -1;
+            $entidad = $this->Emplazamiento->Entidad->read(null, $titular);
+            $nomentidad = $entidad['Entidad']['nombre'];
+            $vectent = explode(' ', $nomentidad);
+            $entidad = $vectent[0];
+            $indice = $titular;
+            switch ($entidad) {
+                case 'Generalitat':
+                    $entidad = 'GVA';
+                    break;
+
+                case 'Ayuntamiento':
+                    $entidad = 'GVA-AYTO';
+                    $indice = 100;
+                    break;
+
+                case 'Ferrocarrils':
+                    $entidad = 'FGV';
+                    break;
+
+                case 'RadioTelevisió':
+                    $entidad = 'RTVV';
+                    break;
+
+                case 'Diputación':
+                    $entidad = 'DIP. ' . mb_strtoupper($vectent[2]);
+                    break;
+
+                default:
+                    $entidad = mb_strtoupper($entidad);
+                    break;
+            }
+            $titsel[$indice] = $entidad;
+        }
+        $this->set('titulares', $titsel);
+        if ($this->request->is('post') || $this->request->is('put')) {
+            $municipio = $this->Emplazamiento->Municipio->find('first',
+                array('conditions' => array('id' => $this->request->data['Emplazamiento']['municipio_id']))
+            );
+            // Comprobamos la entidad para los casos GVA-AYTO:
+            $entidad_id = $this->request->data['Emplazamiento']['entidad_id'];
+            if ($entidad_id == 100){
+                $entidad = $this->Emplazamiento->Entidad->find('first',
+                    array('conditions' => array(
+                        'Entidad.municipio_id' => $municipio['Municipio']['id'],
+                        'Entidad.nombre LIKE'  => 'Ayuntamiento%',)
+                    )
+                );
+                $entidad_id = $entidad['Entidad']['id'];
+            }
+            $datos = array(
+                'Emplazamiento' => array(
+                    'centro' => strtoupper($this->request->data['Emplazamiento']['centro']),
+                    'municipio_id' => $this->request->data['Emplazamiento']['municipio_id'],
+                    'provincia' => substr($this->request->data['Emplazamiento']['municipio_id'], 0, 2),
+                    'comarca_id' => $municipio['Municipio']['comarca_id'],
+                    'entidad_id' => $this->request->data['Emplazamiento']['entidad_id'],
+                    'latitud' => $this->request->data['Emplazamiento']['latitud'],
+                    'longitud' => $this->request->data['Emplazamiento']['longitud'],
+                    'comdes' => $this->request->data['Emplazamiento']['comdes'],
+                    'tdt-gva' => $this->request->data['Emplazamiento']['tdt-gva'],
+                    'rtvv' => $this->request->data['Emplazamiento']['rtvv'],
+                ),
+            );
+            $servicios = array();
+            $indexserv = array(1 => 'comdes', 2 => 'tdt-gva', 4 => 'rtvv');
+            foreach ($indexserv as $index => $servicio) {
+                if ($datos['Emplazamiento'][$servicio] == 'SI'){
+                    $servicios[] = array(
+                        'servtipo_id' => $index,
+                        'descripcion' => 'Servicio ' . strtoupper($servicio) . ' de ' . $this->request->data['Emplazamiento']['centro'],
+                    );
+                }
+            }
+            if (count($servicios) > 0){
+                $datos['Servicio'] = $servicios;
+            }
+            $this->Emplazamiento->create();
+            if ($this->Emplazamiento->saveAssociated($datos)){
+                $idemp = $this->Emplazamiento->id;
+                $this->Flash->exito(__('Emplazamiento') . ' ' . $datos['Emplazamiento']['centro'] . ' ' . __('creado correctamente'));
+                $this->redirect(array('controller' => 'emplazamientos', 'action' => 'detalle', $idemp));
+            }
+            else{
+                $this->Flash->error(__('Error al crear el emplazamiento') . ' ' . $datos['Emplazamiento']['centro']);
+            }
+        }
+        else{
+            // Fijamos el título de la vista
+            $this->set('title_for_layout', __('Nuevo Emplazamiento de Telecomunicaciones de la Comunitat'));
+        }
+    }
+
+    public function editar($id = null){
+        // Verificamos si existe el emplazamiento
+        $this->Emplazamiento->id = $id;
+        if (!$this->Emplazamiento->exists()) {
+            throw new NotFoundException(__('Error: el emplazamiento seleccionado no existe'));
+        }
+        else{
+            $emplazamiento = $this->Emplazamiento->read(null, $id);
+        }
+        // Select de Municipios:
+        $this->Emplazamiento->Municipio->recursive = -1;
+        $opciones = array(
+            'fields' => array('Municipio.id', 'Municipio.nombre'),
+            'order' => 'Municipio.nombre'
+        );
+        $this->set('municipios', $this->Emplazamiento->Municipio->find('list', $opciones));
+
+        // Select de Titulares:
+        $opciones = array(
+            'fields' => array('Emplazamiento.entidad_id'),
+            'order' => 'Emplazamiento.entidad_id',
+            'group' => 'Emplazamiento.entidad_id'
+        );
+        $titulares = $this->Emplazamiento->find('list', $opciones);
+        $titsel = array();
+        foreach ($titulares as $titular){
+            $this->Emplazamiento->Entidad->recursive = -1;
+            $entidad = $this->Emplazamiento->Entidad->read(null, $titular);
+            $nomentidad = $entidad['Entidad']['nombre'];
+            $vectent = explode(' ', $nomentidad);
+            $entidad = $vectent[0];
+            $indice = $titular;
+            switch ($entidad) {
+                case 'Generalitat':
+                    $entidad = 'GVA';
+                    break;
+
+                case 'Ayuntamiento':
+                    $entidad = 'GVA-AYTO';
+                    $indice = 100;
+                    break;
+
+                case 'Ferrocarrils':
+                    $entidad = 'FGV';
+                    break;
+
+                case 'RadioTelevisió':
+                    $entidad = 'RTVV';
+                    break;
+
+                case 'Diputación':
+                    $entidad = 'DIP. ' . mb_strtoupper($vectent[2]);
+                    break;
+
+                default:
+                    $entidad = mb_strtoupper($entidad);
+                    break;
+            }
+            $titsel[$indice] = $entidad;
+        }
+        $this->set('titulares', $titsel);
+        if ($this->request->is('post') || $this->request->is('put')) {
+            $municipio = $this->Emplazamiento->Municipio->find('first',
+                array('conditions' => array('id' => $this->request->data['Emplazamiento']['municipio_id']))
+            );
+            // Comprobamos la entidad para los casos GVA-AYTO:
+            $entidad_id = $this->request->data['Emplazamiento']['entidad_id'];
+            if ($entidad_id == 100){
+                $entidad = $this->Emplazamiento->Entidad->find('first',
+                    array('conditions' => array(
+                        'Entidad.municipio_id' => $municipio['Municipio']['id'],
+                        'Entidad.nombre LIKE'  => 'Ayuntamiento%',)
+                    )
+                );
+                $entidad_id = $entidad['Entidad']['id'];
+            }
+            $datos = array(
+                'Emplazamiento' => array(
+                    'id' => $id,
+                    'centro' => strtoupper($this->request->data['Emplazamiento']['centro']),
+                    'municipio_id' => $municipio['Municipio']['id'],
+                    'provincia' => substr($this->request->data['Emplazamiento']['municipio_id'], 0, 2),
+                    'comarca_id' => $municipio['Municipio']['comarca_id'],
+                    'entidad_id' => $entidad_id,
+                    'latitud' => $this->request->data['Emplazamiento']['latitud'],
+                    'longitud' => $this->request->data['Emplazamiento']['longitud'],
+                ),
+            );
+            if ($this->Emplazamiento->save($datos)){
+                $this->Flash->exito(__('Emplazamiento') . ' ' . $datos['Emplazamiento']['centro'] . ' ' . __('modificado correctamente'));
+                $this->redirect(array('controller' => 'emplazamientos', 'action' => 'detalle', $id));
+            }
+            else{
+                $this->Flash->error(__('Error al crear el emplazamiento') . ' ' . $datos['Emplazamiento']['centro']);
+            }
+        }
+        else{
+            // Fijamos el título de la vista
+            $this->set('title_for_layout', __('Modificar Emplazamiento de Telecomunicaciones de la Comunitat'));
+            $this->request->data = $emplazamiento;
+        }
+    }
+
+    public function borrarserv($idemp = null, $idserv = null){
+        if ($this->request->is('post') || $this->request->is('put')) {
+            // Borramos los datos:
+            if (isset($idemp) && (isset($idserv))){
+                $this->Emplazamiento->id = $idemp;
+                if (!$this->Emplazamiento->exists()) {
+                    throw new NotFoundException(__('Error: el emplazamiento seleccionado no existe'));
+                }
+                // Buscamos los datos del servicio:
+                $this->Emplazamiento->Servicio->id = $idserv;
+                if (!$this->Emplazamiento->Servicio->exists()) {
+                    throw new NotFoundException(__('Error: el servicio seleccionado no existe'));
+                }
+                else{
+                    $this->Emplazamiento->recursive = -1;
+                    $servicio = $this->Emplazamiento->Servicio->read(null, $idserv);
+                    $servtipo = $servicio['Servicio']['servtipo_id'];
+                }
+                if ($this->Emplazamiento->Servicio->delete()) {
+                    $indexserv = array(1 => 'comdes', 2 => 'tdt-gva', 4 => 'rtvv');
+                    $empdatos = array(
+                        'id' => $idemp,
+                        $indexserv[$servtipo] => 'NO'
+                    );
+                    if ($this->Emplazamiento->save($empdatos)){
+                        $this->Flash->exito(__('Servicio eliminado del emplazamiento correctamente'));
+                    }
+                    else{
+                        $this->Flash->error(__('Error al eliminar el servicio del emplazamiento'));
+                    }
+                }
+                else{
+                    $this->Flash->error(__('Error al eliminar el servicio'));
+                }
+            }
+            else{
+                $this->Flash->error(__('Error: No se han pasado los datos de emplazamiento y servicio'));
+            }
+            $this->redirect(array('controller' => 'emplazamientos', 'action' => 'editar', $idemp));
+        }
+        else{
+            // Error
+            throw new MethodNotAllowedException();
+        }
+    }
+
+    public function agregarserv($idemp = null, $servtipo = null){
+        if ($this->request->is('post') || $this->request->is('put')) {
+            // Guardamos los datos:
+            if (isset($idemp) && (isset($servtipo))){
+                // Verificamos si existe el emplazamiento
+                $this->Emplazamiento->id = $idemp;
+                if (!$this->Emplazamiento->exists()) {
+                    throw new NotFoundException(__('Error: el emplazamiento seleccionado no existe'));
+                }
+                else{
+                    $this->Emplazamiento->recursive = -1;
+                    $emplazamiento = $this->Emplazamiento->read(null, $idemp);
+                }
+                $indexserv = array(1 => 'comdes', 2 => 'tdt-gva', 4 => 'rtvv');
+                $empdatos = array(
+                    'id' => $idemp,
+                    $indexserv[$servtipo] => 'SI'
+                );
+                $servdatos = array(
+                    'servtipo_id' => $servtipo,
+                    'descripcion' => 'Servicio ' . strtoupper($indexserv[$servtipo]) . ' de ' . $emplazamiento['Emplazamiento']['centro'],
+                    'emplazamiento_id' => $idemp,
+                );
+                $this->Emplazamiento->Servicio->create();
+                if ($this->Emplazamiento->Servicio->save($servdatos)){
+                    if ($this->Emplazamiento->save($empdatos)){
+                        $this->Flash->exito(__('Servicio') .' ' . strtoupper($indexserv[$servtipo]) . ' ' . __('agregado al emplazamiento') . ' ' . $emplazamiento['Emplazamiento']['centro'] . ' ' . ('correctamente'));
+                    }
+                }
+                else{
+                    $this->Flash->error(__('Error al crear el nuevo servicio del emplazamiento'));
+                }
+                $this->redirect(array('controller' => 'emplazamientos', 'action' => 'editar', $idemp));
+            }
+            else{
+                $this->Flash->error(__('Error: No se han pasado los datos de emplazamiento y servicio'));
+                $this->redirect(array('controller' => 'emplazamientos', 'action' => 'editar', $idemp));
+            }
+        }
+        else{
+            // Error
+            throw new MethodNotAllowedException();
         }
     }
 }

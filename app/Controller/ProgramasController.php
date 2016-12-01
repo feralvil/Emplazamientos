@@ -189,7 +189,7 @@ class ProgramasController extends AppController {
                $this->redirect(array('controller' => 'programas', 'action' => 'index'));
            }
            else{
-               $this->Flash->error(__('Error al eliminar el $programa') . ' ' . $programa['Programa']['nombre']);
+               $this->Flash->error(__('Error al eliminar el programa') . ' ' . $programa['Programa']['nombre']);
            }
        }
        else{

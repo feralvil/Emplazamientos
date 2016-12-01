@@ -18,7 +18,7 @@ class ServiciosController extends AppController {
             $accPerm = array();
             if ($rol == 'colab') {
                 $accPerm = array(
-                    'index', 'detalle', 'editar', 'agregar', 'importar'
+                    'index', 'detalle', 'editar', 'agregar', 'importar', 'centrostdt'
                 );
             }
             elseif ($rol == 'consum') {
@@ -55,6 +55,55 @@ class ServiciosController extends AppController {
 
         // Comprobamos si hemos recibido datos del formulario:
         $condiciones = array();
+        if ($this->request->is('post')){
+            // Select de Emplazamiento
+            if (!empty($this->request->data['Servicio']['emplazamiento'])){
+                $addcond = array('Servicio.emplazamiento_id'  => $this->request->data['Servicio']['emplazamiento']);
+                $condiciones = array_merge($addcond, $condiciones);
+            }
+            // Select de Tipo de Servicio
+            if (!empty($this->request->data['Servicio']['servtipo'])){
+                $addcond = array('Servicio.servtipo_id'  => $this->request->data['Servicio']['servtipo']);
+                $condiciones = array_merge($addcond, $condiciones);
+            }
+            // Cambio de página
+            if (!empty($this->request->data['Servicio']['irapag'])&&($this->request->data['Servicio']['irapag'] > 0)){
+                $this->paginate['page'] = $this->request->data['Servicio']['irapag'];
+            }
+            // Tamaño de página
+            if (!empty($this->request->data['Servicio']['regPag'])&&($this->request->data['Servicio']['regPag'] > 0)){
+                $this->paginate['limit'] = $this->request->data['Servicio']['regPag'];
+            }
+        }
+
+        $this->paginate['conditions'] = $condiciones;
+        $servicios = $this->paginate();
+        $this->set('servicios', $servicios);
+
+    }
+
+    public function centrostdt(){
+        // Fijamos el título de la vista
+        $this->set('title_for_layout', __('Centros TDT de la Comunitat'));
+
+        // Select de Emplazamiento:
+        $this->Servicio->Emplazamiento->recursive = -1;
+        $opciones = array(
+            'fields' => array('Emplazamiento.id', 'Emplazamiento.centro'),
+            'order' => 'Emplazamiento.centro'
+        );
+        $this->set('emplazamientos', $this->Servicio->Emplazamiento->find('list', $opciones));
+
+        // Select de Tipo de Servicio:
+        $this->Servicio->Servtipo->recursive = -1;
+        $opciones = array(
+            'fields' => array('Servtipo.id', 'Servtipo.nombre'),
+            'order' => 'Servtipo.nombre'
+        );
+        $this->set('tiposerv', $this->Servicio->Servtipo->find('list', $opciones));
+
+        // Comprobamos si hemos recibido datos del formulario:
+        $condiciones = array($addcond = array('Servicio.servtipo_id'  => 2));
         if ($this->request->is('post')){
             // Select de Emplazamiento
             if (!empty($this->request->data['Servicio']['emplazamiento'])){

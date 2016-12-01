@@ -16,10 +16,6 @@ class Emplazamiento extends AppModel {
                 'rule' => array('notBlank'),
                 'message' => 'El Emplazamiento no puede estar vacío'
             ),
-            'alfanumerico' => array(
-                'rule' => '/^[A-Za-z0-9_-]*$/',
-                'message' => 'Sólo debe introducir letras, números y guiones'
-            ),
             'unico' => array(
                 'rule' => 'isUnique',
                 'message' => 'Ya existe un Emplazamiento con el mismo nombre'
