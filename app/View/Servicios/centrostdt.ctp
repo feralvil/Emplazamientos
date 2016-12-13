@@ -15,7 +15,7 @@ $this->Js->get("#ultima");
 $this->Js->event('click', "$('#ServicioIrapag').val($ultima);$('#ServicioCentrostdtForm').submit()");
 $nserv = count($servicios);
 ?>
-<h1><?php echo __('Servicios de Telecomunicaciones de la Comunitat'); ?></h1>
+<h1><?php echo __('Centros TDT de la Comunitat'); ?></h1>
 <?php
 echo $this->Form->create('Servicio', array(
     'inputDefaults' => array('label' => false,'div' => false),
@@ -37,7 +37,7 @@ echo $this->Form->hidden('irapag', array('value' => '0'));
     </legend>
     <div class="form-group">
         <?php
-        echo $this->Form->label('Servicio.emplazamiento', __('Emplazamiento'), array('class' => 'col-sm-1 control-label'));
+        echo $this->Form->label('Servicio.descripcion', __('Centro'), array('class' => 'col-sm-1 control-label'));
         echo $this->Form->input('Servicio.emplazamiento', array('options' => $emplazamientos, 'empty' => __('Seleccionar'), 'div' => 'col-sm-3', 'class' => 'form-control'));
         echo $this->Form->label('Servicio.servtipo', __('Tipo'), array('class' => 'col-sm-1 control-label'));
         echo $this->Form->input('Servicio.servtipo', array('options' => $tiposerv, 'empty' => __('Seleccionar'), 'div' => 'col-sm-3', 'class' => 'form-control'));
@@ -128,11 +128,34 @@ if ($nserv > 0){
     <table class="table table-condensed table-hover table-striped table-bordered">
         <tr>
             <th><?php echo __('Acciones');?></th>
-            <th><?php echo __('Servicio');?></th>
-            <th><?php echo __('Tipo de Servicio');?></th>
+            <th><?php echo __('Centro');?></th>
+            <th><?php echo __('Tipo');?></th>
+            <th><?php echo __('Nº Mux');?></th>
+            <?php
+            $arraymux = array('RGE1', 'RGE2', 'MPE1', 'MPE2', 'MPE3', 'MAUT');
+            foreach ($arraymux as $muxnom) {
+            ?>
+                <th><?php echo $muxnom;?></th>
+            <?php
+            }
+            ?>
+            <th><?php echo __('Municipios cubiertos');?></th>
+            <th><?php echo __('Habitantes cubiertos');?></th>
         </tr>
         <?php
         foreach ($servicios as $servicio) {
+            $nmun = 0;
+            $habCubiertos = 0;
+            $tipo = 'C2';
+            if (!empty($servicio['Cobertura'])){
+                $nmun = count($servicio['Cobertura']);
+                foreach ($servicio['Cobertura'] as $cobertura) {
+                    $habCubiertos += $cobertura['habCubiertos'];
+                }
+            }
+            if ($habCubiertos > 1000){
+                $tipo = 'C1';
+            }
         ?>
             <tr>
                 <td class="text-center">
@@ -151,8 +174,26 @@ if ($nserv > 0){
                     );
                     ?>
                 </td>
-                <td><?php echo $servicio['Servicio']['descripcion'];?></td>
-                <td><?php echo $servicio['Servtipo']['nombre'];?></td>
+                <td><?php echo substr($servicio['Servicio']['descripcion'], 20);?></td>
+                <td class="text-center"><?php echo $tipo;?></td>
+                <td class="text-center"><?php echo count($servicio['Emision']);?></td>
+                <?php
+                foreach ($arraymux as $muxnom) {
+                    $muxcanal = "&mdash;";
+                    if (!empty($servicio['Emision'])){
+                        foreach ($servicio['Emision'] as $emision) {
+                            if ($emision['nommux'] == $muxnom){
+                                $muxcanal = $emision['canal'] . '-' . $emision['tipo'];
+                            }
+                        }
+                    }
+                ?>
+                    <td class="text-center"><?php echo $muxcanal;?></td>
+                <?php
+                }
+                ?>
+                <td class="text-center"><?php echo $nmun;?></td>
+                <td class="text-right"><?php echo $habCubiertos;?></td>
             </tr>
         <?php
         }

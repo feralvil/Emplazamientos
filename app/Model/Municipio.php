@@ -11,6 +11,7 @@
 
 class Municipio extends AppModel {
     public $hasMany = array('Emplazamiento', 'Nucleo');
+    public $belongsTo = array('Comarca');
 }
 
 ?>

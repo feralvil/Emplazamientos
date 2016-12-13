@@ -18,7 +18,8 @@ class ServiciosController extends AppController {
             $accPerm = array();
             if ($rol == 'colab') {
                 $accPerm = array(
-                    'index', 'detalle', 'editar', 'agregar', 'importar', 'centrostdt'
+                    'index', 'detalle', 'editar', 'agregar', 'importar', 'centrostdt',
+                    'servcomdes', 'servtdtgva', 'servenlaces', 'servrtvv'
                 );
             }
             elseif ($rol == 'consum') {
@@ -82,6 +83,55 @@ class ServiciosController extends AppController {
 
     }
 
+    public function detalle($id = null){
+        $this->Servicio->id = $id;
+        if (!$this->Servicio->exists()) {
+            throw new NotFoundException(__('Error: el Servicio seleccionado no existe'));
+        }
+        // Buscamos los datos del Múltiple:
+        $servicio = $this->Servicio->read(null, $id);
+        $tiposerv = $servicio['Servicio']['servtipo_id'];
+        $vistaserv = array('1' => 'servcomdes', '2' => 'servtdtgva', '3' => 'servenlaces', '4' => 'servrtvv');
+        $vista = $vistaserv[$tiposerv];
+        $idmun = $servicio['Emplazamiento']['municipio_id'];
+        $this->loadModel('Municipio');
+        $municipio = $this->Municipio->find('first', array('conditions' =>  array('Municipio.id' => $idmun)));
+        $servicio['Municipio'] = $municipio['Municipio'];
+        $servicio['Municipio']['Comarca'] = $municipio['Comarca'];
+        // Buscamos los EDmisiones del centro
+        if (!empty($servicio['Emision'])){
+            foreach ($servicio['Emision'] as &$emision) {
+                $idmux = $emision['multiple_id'];
+                $multiple = $this->Servicio->Emision->Multiple->find('first',
+                    array(
+                        'conditions' => array('id' => $idmux),
+                    )
+                );
+                $emision['nommux'] = $multiple['Multiple']['nombre'];
+                $emision['programas'] = $multiple['Programa'];
+            }
+        }
+        // Buscamos los Coberturas del centro
+        if (!empty($servicio['Cobertura'])){
+            foreach ($servicio['Cobertura'] as &$cobertura) {
+                $habCubiertos = 0;
+                $idmun = $cobertura['municipio_id'];
+                $this->loadModel('Municipio');
+                $this->Municipio->recursive = -1;
+                $municipio = $this->Municipio->find('first', array('conditions' =>  array('id' => $idmun)));
+                $habCubiertos = $habCubiertos + $municipio['Municipio']['poblacion'] * $cobertura['porcentaje'] / 100;
+                $cobertura['municipio'] = $municipio['Municipio']['nombre'];
+                $cobertura['provincia'] = $municipio['Municipio']['provincia'];
+                $cobertura['poblacion'] = $municipio['Municipio']['poblacion'];
+                $cobertura['habCubiertos'] = round($habCubiertos);
+            }
+        }
+        $this->set('servicio', $servicio);
+        // Cambiamos el Layout:
+        $this->set('title_for_layout', __('Detalle de Centro TDT de la Comunitat'));
+        $this->render($vista, 'detmapa');
+    }
+
     public function centrostdt(){
         // Fijamos el título de la vista
         $this->set('title_for_layout', __('Centros TDT de la Comunitat'));
@@ -127,8 +177,33 @@ class ServiciosController extends AppController {
 
         $this->paginate['conditions'] = $condiciones;
         $servicios = $this->paginate();
+        foreach ($servicios as &$servicio) {
+            // Buscamos los múltiples que emite el centro
+            if (!empty($servicio['Emision'])){
+                foreach ($servicio['Emision'] as &$emision) {
+                    $idmux = $emision['multiple_id'];
+                    $multiple = $this->Servicio->Emision->Multiple->find('first',
+                        array(
+                            'conditions' => array('id' => $idmux),
+                        )
+                    );
+                    $emision['nommux'] = $multiple['Multiple']['nombre'];
+                }
+            }
+            // Buscamos los Coberturas del centro
+            if (!empty($servicio['Cobertura'])){
+                foreach ($servicio['Cobertura'] as &$cobertura) {
+                    $habCubiertos = 0;
+                    $idmun = $cobertura['municipio_id'];
+                    $this->loadModel('Municipio');
+                    $this->Municipio->recursive = -1;
+                    $municipio = $this->Municipio->find('first', array('conditions' =>  array('id' => $idmun)));
+                    $habCubiertos = $habCubiertos + $municipio['Municipio']['poblacion'] * $cobertura['porcentaje'] / 100;
+                    $cobertura['habCubiertos'] = round($habCubiertos);
+                }
+            }
+        }
         $this->set('servicios', $servicios);
-
     }
 
     public function importar(){

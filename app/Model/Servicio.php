@@ -6,10 +6,11 @@
  * @author alfonso_fer
  */
 
- App::uses('AppModel', 'Model');
- App::uses('BlowfishPasswordHasher', 'Controller/Component/Auth');
+App::uses('AppModel', 'Model');
+App::uses('BlowfishPasswordHasher', 'Controller/Component/Auth');
 
 class Servicio extends AppModel {
+    public $hasMany = array('Emision', 'Cobertura');
     public $belongsTo = array('Emplazamiento','Servtipo');
     public $validate = array(
         'descripcion' => array(

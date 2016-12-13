@@ -88,6 +88,10 @@ if ($rol != 'admin'){
                         );
                         echo '<ul class="dropdown-menu">';
                         echo '<li>';
+                        echo $this->Html->Link(__('Centros TDT'),array('controller' => 'servicios', 'action' => 'centrostdt'), array('title' => __('Centros TDT')));
+                        echo '</li>';
+                        echo '<li>';
+                        echo '<li>';
                         echo $this->Html->Link(__('Múltiples'),array('controller' => 'multiples', 'action' => 'index'), array('title' => __('Múltiples')));
                         echo '</li>';
                         echo '<li>';
