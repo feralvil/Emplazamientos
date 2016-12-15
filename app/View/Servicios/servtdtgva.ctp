@@ -68,6 +68,11 @@ $this->Js->event('click', $functab);
                 <div class="btn-group" role="group" aria-label="...">
                     <?php
                     echo $this->Html->Link(
+                        '<span class="glyphicon glyphicon-search" aria-hidden="true"></span>' . ' ' . __('Ir a emplazamiento'),
+                        array('controller' => 'emplazamientos', 'action' => 'detalle', $servicio['Emplazamiento']['id']),
+                        array('class' => 'btn btn-default', 'title' => __('Ir a emplazamiento'), 'alt' => __('Ir a emplazamiento'), 'escape' => false)
+                    );
+                    echo $this->Html->Link(
                         '<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>' . ' ' . __('Modificar emplazamiento'),
                         array('controller' => 'emplazamientos', 'action' => 'editar', $servicio['Emplazamiento']['id']),
                         array('class' => 'btn btn-default', 'title' => __('Modificar emplazamiento'), 'alt' => __('Modificar emplazamiento'), 'escape' => false)
@@ -84,67 +89,85 @@ $this->Js->event('click', $functab);
     </div>
     <div id="multiples" class="pestanya hidden">
         <h2><?php echo __('Múltiples emitidos');?> &mdash; <?php echo count($servicio['Emision']) . ' ' . __('Múltiples');?></h2>
-        <table class="table table-condensed table-hover table-striped">
-            <tr>
-                <th><?php echo __('Múltiple');?></th>
-                <th><?php echo __('Canal');?>  &mdash; <?php echo __('Frecuencia');?></th>
-                <th><?php echo __('Tipo');?></th>
-                <th><?php echo __('Retardo');?></th>
-                <th><?php echo __('Programas');?> &mdash; <span class="badge">nº</span></th>
-            </tr>
-            <?php
-            foreach ($servicio['Emision'] as $emision) {
-            ?>
+        <?php
+        if (count($servicio['Cobertura']) > 0){
+        ?>
+            <table class="table table-condensed table-hover table-striped">
                 <tr>
-                    <td><?php echo $emision['nommux'];?></td>
-                    <td>
-                        <?php echo $emision['canal'];?> &mdash;
-                        <?php
-                        $canal = $emision['canal'];
-                        $frecuencia = ($canal - 21) * 8 + 474;
-                        echo '[' . ($frecuencia - 4) . '-'  . ($frecuencia + 4) . ']' . ' MHz';
-                        ?>
+                    <th><?php echo __('Múltiple');?></th>
+                    <th><?php echo __('Canal');?>  &mdash; <?php echo __('Frecuencia');?></th>
+                    <th><?php echo __('Tipo');?></th>
+                    <th><?php echo __('Retardo');?></th>
+                    <th><?php echo __('Programas');?> &mdash; <span class="badge">nº</span></th>
+                </tr>
+                <?php
+                foreach ($servicio['Emision'] as $emision) {
+                ?>
+                    <tr>
+                        <td><?php echo $emision['nommux'];?></td>
+                        <td>
+                            <?php echo $emision['canal'];?> &mdash;
+                            <?php
+                            $canal = $emision['canal'];
+                            $frecuencia = ($canal - 21) * 8 + 474;
+                            echo '[' . ($frecuencia - 4) . '-'  . ($frecuencia + 4) . ']' . ' MHz';
+                            ?>
 
-                    </td>
-                    <td>
-                        <?php
-                        $tipos = array('E' => 'Emisor', 'GF' => 'Gap-Filler');
-                        echo $tipos[$emision['tipo']];
-                        ?>
-                    </td>
-                    <td><?php echo $emision['retardo'];?></td>
-                    <td>
-                        <div class="row-fluid">
-                            <div class="col-md-1 text-center">
-                                <span class="badge"><?php echo count($emision['programas']);?></span>
-                            </div>
-                            <div class="col-md-11">
-                                <div class="row-fluid">
-                                    <?php
-                                    foreach ($emision['programas'] as $programa) {
-                                    ?>
-                                        <div class="col-md-2 text-center">
-                                            <?php
-                                            echo $this->Html->image(
-                                                $programa['logo'],
-                                                array('alt' => $programa['nombre'], 'title' => $programa['nombre'])
-                                            );
-                                            ?>
-                                            <br />
-                                            <small><?php echo $programa['nombre'];?></small>
-                                        </div>
-                                    <?php
-                                    }
-                                    ?>
+                        </td>
+                        <td>
+                            <?php
+                            $tipos = array('E' => 'Emisor', 'GF' => 'Gap-Filler');
+                            echo $tipos[$emision['tipo']];
+                            ?>
+                        </td>
+                        <td><?php echo $emision['retardo'];?></td>
+                        <td>
+                            <div class="row-fluid">
+                                <div class="col-md-1 text-center">
+                                    <span class="badge"><?php echo count($emision['programas']);?></span>
+                                </div>
+                                <div class="col-md-11">
+                                    <div class="row-fluid">
+                                        <?php
+                                        foreach ($emision['programas'] as $programa) {
+                                        ?>
+                                            <div class="col-md-2 text-center">
+                                                <?php
+                                                echo $this->Html->image(
+                                                    $programa['logo'],
+                                                    array('alt' => $programa['nombre'], 'title' => $programa['nombre'])
+                                                );
+                                                ?>
+                                                <br />
+                                                <small><?php echo $programa['nombre'];?></small>
+                                            </div>
+                                        <?php
+                                        }
+                                        ?>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </td>
-                </tr>
-            <?php
-            }
-            ?>
-        </table>
+                        </td>
+                    </tr>
+                <?php
+                }
+                ?>
+            </table>
+        <?php
+        }
+        else{
+        ?>
+            <div class='panel panel-warning'>
+                <div class="panel-heading">
+                    <h3 class="panel-title"><?php echo  __('No hay resultados'); ?></h3>
+                </div>
+                <div class="panel-body">
+                    <?php echo __('No se han econtrado múltiples emitidos por este centro'); ?>
+                </div>
+            </div>
+        <?php
+        }
+        ?>
         <div class="form-group text-center">
             <div class="btn-group" role="group" aria-label="...">
                 <?php
@@ -154,9 +177,9 @@ $this->Js->event('click', $functab);
                     array('class' => 'btn btn-default', 'title' => __('Modificar emisiones'), 'alt' => __('Modificar emisiones'), 'escape' => false)
                 );
                 echo $this->Form->postLink(
-                    '<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>' . ' ' . __('Apagar Servicio'),
-                    array('controller' => 'emision', 'action' => 'apagar', $servicio['Servicio']['id']),
-                    array('class' => 'btn btn-default', 'title' => __('Apagar Servicio'), 'escape' => false),
+                    '<span class="glyphicon glyphicon-off" aria-hidden="true"></span>' . ' ' . __('Apagar Emisiones'),
+                    array('controller' => 'emisions', 'action' => 'apagar', $servicio['Servicio']['id']),
+                    array('class' => 'btn btn-default', 'title' => __('Apagar Emisiones'), 'escape' => false),
                     __('¿Seguro que desea apagar las emisiones del') . ' ' .$servicio['Servicio']['descripcion'] . "?\n"
                 );
                 echo $this->Html->Link(
